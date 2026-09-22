@@ -32,7 +32,8 @@ export type Warehouse = {
 };
 
 async function fetchCsv(url: string): Promise<string[][]> {
-  const res = await fetch(url, { next: { revalidate: 60 } }); // كاش دقيقة
+  // تحديث تلقائي كل 30 ثانية من جهة السيرفر
+  const res = await fetch(url, { next: { revalidate: 30 } });
   if (!res.ok) throw new Error("فشل تحميل البيانات من Google Sheets");
   const text = await res.text();
   return text
@@ -44,7 +45,6 @@ async function fetchCsv(url: string): Promise<string[][]> {
 export async function getProducts(): Promise<Product[]> {
   try {
     const rows = await fetchCsv(sheetToCsvUrl(PRODUCTS_SHEET_ID));
-    // تخطي الهيدر
     return rows.slice(1).map((r) => ({
       id: r[0] || "",
       tradeName: r[1] || "",
