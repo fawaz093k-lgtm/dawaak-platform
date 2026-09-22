@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PHARMACY
+  WAREHOUSE
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  DELIVERED
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PLUS
+  PRO
+}
+
+model User {
+  id               String           @id @default(cuid())
+  role             Role
+  name             String
+  phone            String           @unique
+  email            String?
+  passwordHash     String
+  regionId         String?
+  status           String           @default("active")
+  subscriptionPlan SubscriptionPlan @default(BASIC)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  region           Region?          @relation(fields: [regionId], references: [id])
+  warehouse        Warehouse?
+  orders           Order[]          @relation("PharmacyOrders")
+  stockAlerts      StockAlert[]
+  notifications    Notification[]
+  subscriptions    Subscription[]
+}
+
+model Region {
+  id       String    @id @default(cuid())
+  name     String
+  parentId String?
+  parent   Region?   @relation("RegionHierarchy", fields: [parentId], references: [id])
+  children Region[]  @relation("RegionHierarchy")
+  users    User[]
+  warehouses WarehouseCoverage[]
+}
+
+model Warehouse {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  address     String?
+  phone       String?
+  isPriority  Boolean  @default(false)
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+  inventory   WarehouseInventory[]
+  orderItems  OrderItem[]
+  coverage    WarehouseCoverage[]
+}
+
+model WarehouseCoverage {
+  id          String @id @default(cuid())
+  warehouseId String
+  regionId    String
+
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  region      Region    @relation(fields: [regionId], references: [id])
+
+  @@unique([warehouseId, regionId])
+}
+
+model Company {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  tradeName      String
+  scientificName String?
+  companyId      String
+  form           String?  // حب، شراب، أمبول...
+  strength       String?  // العيار
+  unit           String?
+  barcode        String?
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+
+  company        Company  @relation(fields: [companyId], references: [id])
+  inventory      WarehouseInventory[]
+  orderItems     OrderItem[]
+  stockAlerts    StockAlert[]
+  alternatives   ProductAlternative[] @relation("ProductAlternatives")
+  alternativeOf  ProductAlternative[] @relation("AlternativeProducts")
+
+  @@index([tradeName])
+  @@index([scientificName])
+}
+
+model WarehouseInventory {
+  id          String    @id @default(cuid())
+  warehouseId String
+  productId   String
+  quantity    Int       @default(0)
+  price       Int       // بالليرة السورية
+  bonus       String?   // مثل "1+10"
+  expiryDate  DateTime?
+  isAvailable Boolean   @default(true)
+  lastUpdated DateTime  @updatedAt
+
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+
+  @@unique([warehouseId, productId])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  pharmacyId      String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Int
+  lockedAt        DateTime?
+  deliveryAddress String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  pharmacy        User        @relation("PharmacyOrders", fields: [pharmacyId], references: [id])
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  warehouseId String
+  productId   String
+  quantity    Int
+  unitPrice   Int    // السعر المقفل
+  bonus       String?
+  subtotal    Int
+
+  order       Order     @relation(fields: [orderId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+}
+
+model StockAlert {
+  id         String   @id @default(cuid())
+  pharmacyId String
+  productId  String
+  notified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  pharmacy   User     @relation(fields: [pharmacyId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@unique([pharmacyId, productId])
+}
+
+model ProductAlternative {
+  id                   String  @id @default(cuid())
+  productId            String
+  alternativeProductId String
+  similarityScore      Float   @default(0)
+
+  product              Product @relation("ProductAlternatives", fields: [productId], references: [id])
+  alternativeProduct   Product @relation("AlternativeProducts", fields: [alternativeProductId], references: [id])
+
+  @@unique([productId, alternativeProductId])
+}
+
+model Subscription {
+  id        String           @id @default(cuid())
+  userId    String
+  plan      SubscriptionPlan
+  startDate DateTime
+  endDate   DateTime
+  status    String           @default("active")
+
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // stock_back, order_update, offer...
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
