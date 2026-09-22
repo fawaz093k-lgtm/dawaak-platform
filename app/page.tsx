@@ -1,12 +1,17 @@
 import { getProducts } from "@/lib/sheets";
-import AutoRefresh from "@/components/AutoRefresh";
+import ChangeNotifier from "@/components/ChangeNotifier";
 
 export default async function Home() {
   const products = await getProducts();
 
+  // بصمة بسيطة لاكتشاف أي تغيير في الأسعار أو عدد المنتجات
+  const dataSignature = products
+    .map((p) => `${p.id}:${p.priceFawaz}:${p.priceJalgheef}:${p.bonusFawaz}`)
+    .join("|");
+
   return (
     <main className="min-h-screen p-4 md:p-8">
-      <AutoRefresh intervalSeconds={30} />
+      <ChangeNotifier dataSignature={dataSignature} intervalSeconds={30} />
 
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
@@ -50,7 +55,7 @@ export default async function Home() {
           <p className="font-semibold text-accent">أسعار محدثة</p>
         </div>
         <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
-          <p className="font-semibold text-accent">تحديث كل 30ث</p>
+          <p className="font-semibold text-accent">إشعارات فورية</p>
         </div>
       </div>
 
