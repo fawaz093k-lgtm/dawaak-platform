@@ -1,10 +1,13 @@
 import { getProducts } from "@/lib/sheets";
+import AutoRefresh from "@/components/AutoRefresh";
 
 export default async function Home() {
   const products = await getProducts();
 
   return (
     <main className="min-h-screen p-4 md:p-8">
+      <AutoRefresh intervalSeconds={30} />
+
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -47,7 +50,7 @@ export default async function Home() {
           <p className="font-semibold text-accent">أسعار محدثة</p>
         </div>
         <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
-          <p className="font-semibold text-accent">من Google Sheets</p>
+          <p className="font-semibold text-accent">تحديث كل 30ث</p>
         </div>
       </div>
 
