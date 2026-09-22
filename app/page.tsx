@@ -1,4 +1,8 @@
-export default function Home() {
+import { getProducts } from "@/lib/sheets";
+
+export default async function Home() {
+  const products = await getProducts();
+
   return (
     <main className="min-h-screen p-4 md:p-8">
       {/* Header */}
@@ -12,9 +16,12 @@ export default function Home() {
             <p className="text-sm text-[var(--text-secondary)]">منصة الأدوية للصيدليات</p>
           </div>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover transition">
+        <a
+          href="/login"
+          className="px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent-hover transition"
+        >
           تسجيل الدخول
-        </button>
+        </a>
       </header>
 
       {/* Search */}
@@ -30,44 +37,71 @@ export default function Home() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        {["+25,000 منتج", "+1,250 مستودع", "أسعار محدثة يومياً", "توصيل سريع"].map(
-          (item, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center"
-            >
-              <p className="font-semibold text-accent">{item}</p>
-            </div>
-          )
-        )}
+        <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
+          <p className="font-semibold text-accent">{products.length}+ منتج</p>
+        </div>
+        <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
+          <p className="font-semibold text-accent">3 مستودعات</p>
+        </div>
+        <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
+          <p className="font-semibold text-accent">أسعار محدثة</p>
+        </div>
+        <div className="p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)] text-center">
+          <p className="font-semibold text-accent">من Google Sheets</p>
+        </div>
       </div>
 
-      {/* Placeholder products */}
-      <h2 className="text-xl font-bold mb-4">الأدوية الأكثر طلباً</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border)] shadow-sm"
-          >
-            <h3 className="font-bold text-lg mb-1">بانادول أكتفاست</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-3">باراسيتامول + كافيين</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>مستودع الفواز</span>
-                <span className="font-semibold text-accent">27,000 ل.س</span>
+      {/* Products from Google Sheets */}
+      <h2 className="text-xl font-bold mb-4">الأدوية المتوفرة</h2>
+
+      {products.length === 0 ? (
+        <p className="text-[var(--text-secondary)]">جاري تحميل البيانات من Google Sheets...</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {products.map((p) => (
+            <div
+              key={p.id}
+              className="p-5 rounded-2xl bg-[var(--card-bg)] border border-[var(--border)] shadow-sm"
+            >
+              <h3 className="font-bold text-lg mb-1">{p.tradeName}</h3>
+              <p className="text-sm text-[var(--text-secondary)] mb-1">{p.scientificName}</p>
+              <p className="text-xs text-[var(--text-secondary)] mb-3">{p.company} • {p.form}</p>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>مستودع الفواز</span>
+                  <span className="font-semibold text-accent">
+                    {p.priceFawaz.toLocaleString()} ل.س
+                    {p.bonusFawaz && (
+                      <span className="text-xs text-[var(--text-secondary)] mr-1">
+                        ({p.bonusFawaz})
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>مستودع الجلجيف</span>
+                  <span className="font-semibold">
+                    {p.priceJalgheef.toLocaleString()} ل.س
+                    {p.bonusJalgheef && (
+                      <span className="text-xs text-[var(--text-secondary)] mr-1">
+                        ({p.bonusJalgheef})
+                      </span>
+                    )}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>مستودع الجلجيف</span>
-                <span className="font-semibold">28,500 ل.س</span>
-              </div>
+
+              <a
+                href={`/product/${p.id}`}
+                className="mt-4 block w-full py-2 rounded-xl bg-accent text-white text-center hover:bg-accent-hover transition"
+              >
+                عرض التفاصيل
+              </a>
             </div>
-            <button className="mt-4 w-full py-2 rounded-xl bg-accent text-white hover:bg-accent-hover transition">
-              أضف للسلة
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
