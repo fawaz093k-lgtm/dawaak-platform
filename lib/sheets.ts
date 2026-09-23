@@ -1,6 +1,6 @@
-// بيانات مستودع الفواز فقط — بروشور 25
+// بيانات مستودع الفواز فقط — بروشور 25 (استخراج موسّع)
 
-const PRODUCTS_SHEET_ID = "19SdK5DVU2OZSPOBVS0yLKnD_EAxreKbtzsj1izCAqHQ";
+const PRODUCTS_SHEET_ID = "1cEE0ygaNTyJF2zc27zCBhZ_ybirMpk5TClzIDzqchIU";
 
 function sheetToCsvUrl(sheetId: string) {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
