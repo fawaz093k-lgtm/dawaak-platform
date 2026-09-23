@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import BottomNav from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "دواءك | منصة الأدوية للصيدليات",
@@ -13,8 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl">
-      <body className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      <body className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] pb-20">
         {children}
+        <BottomNav />
       </body>
     </html>
   );
