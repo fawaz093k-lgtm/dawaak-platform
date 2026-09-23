@@ -9,7 +9,6 @@ export type SearchResult = {
   }[];
 };
 
-/** بحث بسيط بالاسم التجاري أو العلمي أو الشركة */
 export async function searchMedicine(query: string): Promise<SearchResult[]> {
   const q = query.trim().toLowerCase();
   if (!q || q.length < 2) return [];
@@ -17,13 +16,7 @@ export async function searchMedicine(query: string): Promise<SearchResult[]> {
   const products = await getProducts();
 
   const matched = products.filter((p) => {
-    const haystack = [
-      p.tradeName,
-      p.scientificName,
-      p.company,
-      p.form,
-      p.strength,
-    ]
+    const haystack = [p.tradeName, p.scientificName, p.company, p.form, p.strength]
       .join(" ")
       .toLowerCase();
     return haystack.includes(q);
@@ -31,7 +24,6 @@ export async function searchMedicine(query: string): Promise<SearchResult[]> {
 
   return matched.map((p) => {
     const warehouses: SearchResult["warehouses"] = [];
-
     if (p.priceFawaz > 0) {
       warehouses.push({
         name: "مستودع الفواز",
@@ -39,46 +31,33 @@ export async function searchMedicine(query: string): Promise<SearchResult[]> {
         bonus: p.bonusFawaz || "—",
       });
     }
-    if (p.priceJalgheef > 0) {
-      warehouses.push({
-        name: "مستودع الجلجيف",
-        price: p.priceJalgheef,
-        bonus: p.bonusJalgheef || "—",
-      });
-    }
-
     return { product: p, warehouses };
   });
 }
 
-/** صياغة رد تيليجرام */
 export function formatSearchReply(query: string, results: SearchResult[]): string {
   if (results.length === 0) {
-    return `❌ ما لقيت نتائج لـ "${query}"\n\nجرب تكتب الاسم التجاري أو العلمي بشكل أوضح.`;
+    return `❌ ما لقيت نتائج لـ "${query}"\n\nجرب تكتب جزء من الاسم التجاري.\nمثال: املودبين أو اوميغ أو فولتاميد`;
   }
 
-  let text = `🔍 نتائج البحث عن: <b>${query}</b>\n\n`;
+  let text = `🔍 نتائج البحث عن: <b>${query}</b>\n🏪 مستودع الفواز\n\n`;
 
-  for (const r of results.slice(0, 5)) {
-    // أقصى 5 نتائج عشان الرسالة ما تطول
+  for (const r of results.slice(0, 8)) {
     text += `💊 <b>${r.product.tradeName}</b>\n`;
-    if (r.product.scientificName) text += `   ${r.product.scientificName}\n`;
-    text += `   الشركة: ${r.product.company}\n`;
-
+    if (r.product.company) text += `   الشركة: ${r.product.company}\n`;
     if (r.warehouses.length === 0) {
-      text += `   ⚠️ غير متوفر حالياً\n`;
+      text += `   ⚠️ غير متوفر\n`;
     } else {
-      for (const w of r.warehouses) {
-        text += `   🏪 ${w.name}: <b>${w.price.toLocaleString()} ل.س</b>`;
-        if (w.bonus && w.bonus !== "—") text += ` (${w.bonus})`;
-        text += `\n`;
-      }
+      const w = r.warehouses[0];
+      text += `   السعر: <b>${w.price.toLocaleString()} ل.س</b>`;
+      if (w.bonus && w.bonus !== "—") text += ` | بونص: ${w.bonus}`;
+      text += `\n`;
     }
     text += `\n`;
   }
 
-  if (results.length > 5) {
-    text += `... و ${results.length - 5} نتائج إضافية\n`;
+  if (results.length > 8) {
+    text += `... و ${results.length - 8} نتائج إضافية\n`;
   }
 
   return text.trim();
